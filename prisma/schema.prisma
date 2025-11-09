@@ -1,0 +1,25 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Order {
+  id           String   @id @default(uuid())
+  tokenIn      String
+  tokenOut     String
+  amount       Float
+  status       String    // pending | confirmed | failed
+  executedOn   String?   // Which DEX (Raydium/Meteora)
+  price        Float?
+  txHash       String?
+  failedReason String?
+  createdAt    DateTime @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([tokenIn, tokenOut])
+}
