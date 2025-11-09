@@ -1,4 +1,4 @@
-# 🚀 Order Execution Engine (Market Order + Mock DEX + WebSocket + Queue)
+# Order Execution Engine (Market Order + Mock DEX + WebSocket + Queue)
 
 A high-performance backend system that simulates a decentralized exchange (DEX) **Order Execution Engine** with real-time WebSocket updates, price routing between Raydium & Meteora, Redis-backed job queues, PostgreSQL persistence, and fault-tolerant order processing.
 
