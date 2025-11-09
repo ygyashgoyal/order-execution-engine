@@ -2,15 +2,13 @@
   "name": "order-execution-engine",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/app.js",
   "scripts": {
-    "test": "cross-env NODE_ENV=test jest --runInBand",
-    "dev": "ts-node-dev --respawn --transpile-only src/app.ts"
+    "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
+    "build": "tsc",
+    "start": "node dist/app.js",
+    "test": "cross-env NODE_ENV=test jest --runInBand"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "@fastify/websocket": "^11.2.0",
     "bullmq": "^5.63.0",
