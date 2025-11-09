@@ -61,3 +61,21 @@ I chose **Market Order** because it is:
                                     │
                            ⬇ PostgreSQL (Prisma)
 ```
+
+### 📡 WebSocket Live Order Updates (Postman)
+
+Postman supports WebSocket but does not export it in collections.
+So follow these steps manually:
+
+1. Run: POST /api/orders/execute → Receive `orderId`
+2. Open Postman → New → WebSocket Request
+3. Enter:
+   ws://localhost:3000/api/orders/execute?orderId={{orderId}}
+4. Click **Connect**
+5. You’ll start receiving:
+   - connected
+   - pending
+   - routing
+   - building
+   - submitted
+   - confirmed / failed

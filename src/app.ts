@@ -6,18 +6,26 @@ const app = Fastify();
 app.register(websocket);
 app.register(orderRoutes);
 
-app.get("/", async () => {
-  return { message: "Order Execution Engine Running 🚀" };
-});
+// ✅ Export Fastify app for Jest or other modules
+export default app;
 
-const start = async () => {
+// ✅ Export helpers to start/stop the server in tests
+export async function startServer(port = 4000) {
+  await app.listen({ port });
+  return app;
+}
+
+export async function stopServer() {
   try {
-    await app.listen({ port: 3000 });
-    console.log("Server running on http://localhost:3000");
+    await app.close();
   } catch (err) {
-    console.error(err);
-    process.exit(1);
+    console.error("Error closing Fastify:", err);
   }
-};
+}
 
-start();
+// ✅ Only auto-start if not testing
+if (process.env.NODE_ENV !== "test") {
+  startServer(3000).then(() => {
+    console.log("Server running on http://localhost:3000");
+  });
+}

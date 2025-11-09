@@ -1,14 +1,12 @@
 export class MockDexRouter {
-  // 🔹 Raydium price simulation
+  private isTest = process.env.NODE_ENV === "test";
+
   // 🔹 Raydium price simulation
   async getRaydiumQuote(tokenIn: string, tokenOut: string, amount: number) {
-    await this.sleep(300); // Simulate network latency
+    await this.sleep(300); // Simulate network latency (no-op in tests)
 
-    // Base price around 100
     const basePrice = 100;
-    // Simulate price between 98% and 102%
     const priceFluctuation = basePrice * (0.98 + Math.random() * 0.04);
-    // Add mock liquidity impact: larger trades get slightly worse price
     const liquidityImpact = priceFluctuation * (1 - amount * 0.0005);
 
     return {
@@ -24,11 +22,8 @@ export class MockDexRouter {
   async getMeteoraQuote(tokenIn: string, tokenOut: string, amount: number) {
     await this.sleep(300);
 
-    // Base price around 100
     const basePrice = 100;
-    // Simulate price between 97% and 102%
     const priceFluctuation = basePrice * (0.97 + Math.random() * 0.05);
-    // Simulate slightly worse liquidity impact
     const liquidityImpact = priceFluctuation * (1 - amount * 0.0007);
 
     return {
@@ -49,15 +44,18 @@ export class MockDexRouter {
 
     const best = raydium.price > meteora.price ? raydium : meteora;
 
-    console.log(
-      `🔎 Routing Decision → Raydium: ${raydium.price}, Meteora: ${meteora.price} | ✅ Selected: ${best.dex}`
-    );
+    if (!this.isTest) {
+      console.log(
+        `🔎 Routing Decision → Raydium: ${raydium.price}, Meteora: ${meteora.price} | ✅ Selected: ${best.dex}`
+      );
+    }
 
     return best;
   }
 
-  // Utility sleep function
+  // Utility sleep function (skips delay in test mode)
   private sleep(ms: number) {
+    if (this.isTest) return Promise.resolve();
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

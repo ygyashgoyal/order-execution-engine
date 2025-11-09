@@ -1,14 +1,15 @@
 import { FastifyInstance } from "fastify";
-import { v4 as uuidv4 } from "uuid";
 import { orderQueue } from "../queue/orderQueue";
+import { v4 as uuidv4 } from "uuid";
 
+// Keep an in-memory map of order state (socket + params)
 export const orderStatusMap = new Map<
   string,
   { socket: any; tokenIn: string; tokenOut: string; amount: number }
 >();
 
-const orderRoutes = async (app: FastifyInstance) => {
-  // ✅ 1. POST request — Create order, return orderId (but DO NOT enqueue yet)
+export const orderRoutes = async (app: FastifyInstance) => {
+  // ✅ 1. POST /api/orders/execute — Create order entry
   app.post("/api/orders/execute", async (request, reply) => {
     const { tokenIn, tokenOut, amount } = request.body as any;
 
@@ -17,9 +18,11 @@ const orderRoutes = async (app: FastifyInstance) => {
     }
 
     const orderId = uuidv4();
-    console.log(`✅ Order received: ${orderId}`);
+    if (process.env.NODE_ENV !== "test") {
+      console.log(`✅ Order received: ${orderId}`);
+    }
 
-    // Temporarily store the data until the WebSocket connects
+    // Store order temporarily until WebSocket connects
     orderStatusMap.set(orderId, {
       socket: null,
       tokenIn,
@@ -30,14 +33,15 @@ const orderRoutes = async (app: FastifyInstance) => {
     reply.send({ orderId });
   });
 
-  // ✅ 2. WebSocket — Client connects using same endpoint with query orderId
+  // ✅ 2. WebSocket /api/orders/execute?orderId=...
   app.get(
     "/api/orders/execute",
     { websocket: true },
     async (connection, request) => {
-      const orderId = (request.query as any).orderId;
+      const { orderId } = request.query as any;
       const order = orderStatusMap.get(orderId);
 
+      // If invalid orderId, reject connection
       if (!order) {
         connection.send(
           JSON.stringify({ error: "Invalid or missing orderId" })
@@ -45,13 +49,15 @@ const orderRoutes = async (app: FastifyInstance) => {
         return connection.close();
       }
 
-      console.log(`🔌 WebSocket connected for order: ${orderId}`);
+      if (process.env.NODE_ENV !== "test") {
+        console.log(`🔌 WebSocket connected for order: ${orderId}`);
+      }
 
-      // Attach WebSocket connection to saved order
+      // Attach WebSocket to order
       order.socket = connection;
       orderStatusMap.set(orderId, order);
 
-      // Send confirmation of WebSocket connection
+      // Confirm connection established
       connection.send(
         JSON.stringify({
           orderId,
@@ -60,21 +66,43 @@ const orderRoutes = async (app: FastifyInstance) => {
         })
       );
 
-      // ✅ Once WebSocket is ready → Add job to BullMQ queue
-      await orderQueue.add("processOrder", {
-        orderId,
-        tokenIn: order.tokenIn,
-        tokenOut: order.tokenOut,
-        amount: order.amount,
-      });
+      // ✅ Enqueue order job *after* connection ready
+      await orderQueue.add(
+        "processOrder",
+        {
+          orderId,
+          tokenIn: order.tokenIn,
+          tokenOut: order.tokenOut,
+          amount: order.amount,
+        },
+        {
+          removeOnComplete: true,
+          attempts: 3,
+          backoff: { type: "exponential", delay: 500 },
+        }
+      );
 
-      // 🛑 Optional cleanup: Remove socket reference if client disconnects
+      // 🧹 Handle WebSocket close
       connection.on("close", () => {
-        console.log(`❌ WebSocket closed for order ${orderId}`);
+        // Disable noisy logs during tests
+        if (process.env.NODE_ENV !== "test") {
+          console.log(`❌ WebSocket closed for order ${orderId}`);
+        }
+
         const saved = orderStatusMap.get(orderId);
         if (saved) {
           saved.socket = null;
           orderStatusMap.set(orderId, saved);
+        }
+      });
+
+      // ✅ Extra safety: handle server shutdown gracefully in tests
+      connection.on("error", (err: any) => {
+        if (process.env.NODE_ENV !== "test") {
+          console.error(
+            `⚠️ WebSocket error for order ${orderId}:`,
+            err.message
+          );
         }
       });
     }
