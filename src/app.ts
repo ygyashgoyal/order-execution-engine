@@ -2,19 +2,26 @@ import Fastify from "fastify";
 import websocket from "@fastify/websocket";
 import orderRoutes from "./routes/order.route";
 
-const app = Fastify();
+const app = Fastify({
+  logger: false,
+});
+
 app.register(websocket);
 app.register(orderRoutes);
 
-// ✅ Export Fastify app for Jest or other modules
+// ✅ Export app for jest or other tests
 export default app;
 
-// ✅ Export helpers to start/stop the server in tests
+// ✅ Start server (used in prod & test)
 export async function startServer(port = 4000) {
-  await app.listen({ port });
+  await app.listen({
+    port,
+    host: "0.0.0.0", // ✅ Required for Railway/Render deployment
+  });
   return app;
 }
 
+// ✅ Stop server (used in tests)
 export async function stopServer() {
   try {
     await app.close();
@@ -23,9 +30,10 @@ export async function stopServer() {
   }
 }
 
-// ✅ Only auto-start if not testing
+// ✅ Auto-start only in production, not during tests
 if (process.env.NODE_ENV !== "test") {
-  startServer(3000).then(() => {
-    console.log("Server running on http://localhost:3000");
+  const port = Number(process.env.PORT) || 3000;
+  startServer(port).then(() => {
+    console.log(`🚀 Server running on port ${port}`);
   });
 }

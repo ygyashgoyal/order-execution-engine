@@ -3,7 +3,12 @@ import { PrismaClient } from "@prisma/client";
 import { MockDexRouter } from "../dex/mockDexRouter";
 import { orderStatusMap } from "../routes/order.route";
 
-const connection = { host: "127.0.0.1", port: 6379 };
+const connection = {
+  host: process.env.REDIS_HOST || "127.0.0.1",
+  port: Number(process.env.REDIS_PORT) || 6379,
+  password: process.env.REDIS_PASSWORD || undefined,
+};
+
 export const orderQueue = new Queue("orderQueue", {
   connection,
   // ✅ Add retry behaviour here
