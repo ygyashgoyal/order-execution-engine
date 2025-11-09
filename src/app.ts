@@ -9,10 +9,15 @@ const app = Fastify({
 app.register(websocket);
 app.register(orderRoutes);
 
-// ✅ Export app for jest or other tests
+// ✅ Root route for Railway/healthcheck
+app.get("/", async () => {
+  return { message: "Order Execution Engine Running 🚀" };
+});
+
+// ✅ Export app for Jest or other tests
 export default app;
 
-// ✅ Start server (used in prod & test)
+// ✅ Start server function
 export async function startServer(port = 4000) {
   await app.listen({
     port,
@@ -21,7 +26,7 @@ export async function startServer(port = 4000) {
   return app;
 }
 
-// ✅ Stop server (used in tests)
+// ✅ Stop server function (for tests)
 export async function stopServer() {
   try {
     await app.close();
@@ -30,7 +35,7 @@ export async function stopServer() {
   }
 }
 
-// ✅ Auto-start only in production, not during tests
+// ✅ If NOT in test mode, start automatically
 if (process.env.NODE_ENV !== "test") {
   const port = Number(process.env.PORT) || 3000;
   startServer(port).then(() => {
