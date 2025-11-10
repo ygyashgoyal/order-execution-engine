@@ -6,6 +6,12 @@ It follows the complete order lifecycle from submission → routing → simulate
 
 ---
 
+## 🎥 Deployed Link
+
+[https://order-execution-engine-rwjm.onrender.com/](https://order-execution-engine-rwjm.onrender.com/)
+
+---
+
 ## 🚀 Tech Stack
 
 | Component    | Technology                                    |
