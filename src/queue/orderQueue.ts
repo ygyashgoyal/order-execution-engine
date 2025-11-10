@@ -11,12 +11,11 @@ const connection = {
 
 export const orderQueue = new Queue("orderQueue", {
   connection,
-  // ✅ Add retry behaviour here
   defaultJobOptions: {
     attempts: 3,
     backoff: {
       type: "exponential",
-      delay: 2000, // 2s, 4s, 8s retry delays
+      delay: 2000, // retry delays in milliseconds
     },
     removeOnComplete: true,
     removeOnFail: false,
@@ -27,7 +26,7 @@ const prisma = new PrismaClient();
 const dexRouter = new MockDexRouter();
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
-// ✅ Utility: Normalize SOL → wSOL (mock)
+// Normalize SOL → wSOL
 const normalizeToken = (token: string) => {
   if (token === "SOL") return "wSOL";
   return token;
@@ -47,17 +46,17 @@ new Worker(
     };
 
     try {
-      // ✅ 0. Normalization (SOL → wSOL)
+      // Normalization (SOL → wSOL)
       const tokenInNorm = normalizeToken(tokenIn);
       const tokenOutNorm = normalizeToken(tokenOut);
       if (tokenIn !== tokenInNorm || tokenOut !== tokenOutNorm) {
         console.log(`🔁 Wrapping SOL → wSOL (mock)`);
       }
 
-      // 1. Pending
+      // Pending
       send("pending");
 
-      // 2. Routing
+      // Routing
       send("routing", { message: "Comparing DEX prices..." });
       const bestDex = await dexRouter.getBestPrice(
         tokenInNorm,
@@ -70,7 +69,7 @@ new Worker(
         price: bestDex.price,
       });
 
-      // ✅ 3. Slippage protection mock
+      // Slippage protection mock
       const slippageBps = 50; // 0.5%
       const quotedPrice = bestDex.price;
       const minAcceptable = quotedPrice * (1 - slippageBps / 10000);
@@ -86,24 +85,24 @@ new Worker(
         );
       }
 
-      // 4. Building transaction
+      // Building transaction
       send("building", { message: "Building transaction..." });
       await delay(1000);
 
-      // 5. Submitted
+      // Submitted
       const txHash = `tx-${Math.random().toString(36).substr(2, 9)}`;
       send("submitted", { txHash });
 
       await delay(1000);
 
-      // 6. Confirmed
+      // Confirmed
       send("confirmed", {
         message: "Transaction confirmed",
         executedOn: bestDex.dex,
         price: executionPrice,
       });
 
-      // ✅ Prevent duplicate insert if retry
+      // Prevent duplicate insert if retry
       await prisma.order.upsert({
         where: { id: orderId },
         update: {
@@ -124,14 +123,14 @@ new Worker(
         },
       });
     } catch (error: any) {
-      console.error(`❌ Worker error:`, error);
+      console.error(`Worker error:`, error);
 
       send("failed", {
         message: "Order failed",
         reason: error.message || String(error),
       });
 
-      // ✅ Save failure to DB (upsert so retries don't cause duplication)
+      // Save failure to DB
       await prisma.order.upsert({
         where: { id: orderId },
         update: {

@@ -2,14 +2,13 @@ import { FastifyInstance } from "fastify";
 import { orderQueue } from "../queue/orderQueue";
 import { v4 as uuidv4 } from "uuid";
 
-// Keep an in-memory map of order state (socket + params)
 export const orderStatusMap = new Map<
   string,
   { socket: any; tokenIn: string; tokenOut: string; amount: number }
 >();
 
 export const orderRoutes = async (app: FastifyInstance) => {
-  // ✅ 1. POST /api/orders/execute — Create order entry
+  // POST /api/orders/execute — Create order entry
   app.post("/api/orders/execute", async (request, reply) => {
     const { tokenIn, tokenOut, amount } = request.body as any;
 
@@ -33,7 +32,7 @@ export const orderRoutes = async (app: FastifyInstance) => {
     reply.send({ orderId });
   });
 
-  // ✅ 2. WebSocket /api/orders/execute?orderId=...
+  // WebSocket /api/orders/execute?orderId=...
   app.get(
     "/api/orders/execute",
     { websocket: true },
@@ -66,7 +65,7 @@ export const orderRoutes = async (app: FastifyInstance) => {
         })
       );
 
-      // ✅ Enqueue order job *after* connection ready
+      // Enqueue order job *after* connection ready
       await orderQueue.add(
         "processOrder",
         {
@@ -82,11 +81,11 @@ export const orderRoutes = async (app: FastifyInstance) => {
         }
       );
 
-      // 🧹 Handle WebSocket close
+      // Handle WebSocket close
       connection.on("close", () => {
         // Disable noisy logs during tests
         if (process.env.NODE_ENV !== "test") {
-          console.log(`❌ WebSocket closed for order ${orderId}`);
+          console.log(`WebSocket closed for order ${orderId}`);
         }
 
         const saved = orderStatusMap.get(orderId);
@@ -96,13 +95,9 @@ export const orderRoutes = async (app: FastifyInstance) => {
         }
       });
 
-      // ✅ Extra safety: handle server shutdown gracefully in tests
       connection.on("error", (err: any) => {
         if (process.env.NODE_ENV !== "test") {
-          console.error(
-            `⚠️ WebSocket error for order ${orderId}:`,
-            err.message
-          );
+          console.error(`WebSocket error for order ${orderId}:`, err.message);
         }
       });
     }

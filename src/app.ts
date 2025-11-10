@@ -9,19 +9,17 @@ const app = Fastify({
 app.register(websocket);
 app.register(orderRoutes);
 
-// Root route for Railway/healthcheck
 app.get("/", async () => {
   return { message: "Order Execution Engine Running 🚀" };
 });
 
-// Export app for Jest or other tests
 export default app;
 
 // Start server function
 export async function startServer(port = 4000) {
   await app.listen({
     port,
-    host: "0.0.0.0", // Required for Railway/Render deployment
+    host: "0.0.0.0",
   });
   return app;
 }

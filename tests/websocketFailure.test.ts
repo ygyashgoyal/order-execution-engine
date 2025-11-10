@@ -1,4 +1,3 @@
-// tests/websocketFailure.test.ts
 import Fastify from "fastify";
 import websocket from "@fastify/websocket";
 import WebSocket from "ws";
@@ -12,7 +11,6 @@ describe("WebSocket Failure Case", () => {
     app = Fastify({ logger: false });
     await app.register(websocket);
 
-    // Minimal WebSocket route that simulates an immediate failure
     app.get(
       "/api/orders/execute",
       { websocket: true },
@@ -22,7 +20,6 @@ describe("WebSocket Failure Case", () => {
       ) => {
         const { orderId } = request.query as any;
 
-        // Send a "failed" message after a short delay
         setTimeout(() => {
           connection.send(
             JSON.stringify({

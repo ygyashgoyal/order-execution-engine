@@ -1,6 +1,6 @@
 import request from "supertest";
 
-// we only need the running server, no need to start/stop it again
+// we only need the running server
 const baseURL = "http://localhost:4000";
 
 describe("Order API", () => {

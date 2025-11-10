@@ -1,6 +1,5 @@
 jest.resetModules();
 
-// ✅ Mock DEX router to always succeed with a stable quote
 jest.mock("../src/dex/mockDexRouter", () => ({
   MockDexRouter: jest.fn().mockImplementation(() => ({
     getBestPrice: () => ({

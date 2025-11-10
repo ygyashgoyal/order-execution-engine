@@ -1,7 +1,7 @@
 export class MockDexRouter {
   private isTest = process.env.NODE_ENV === "test";
 
-  // 🔹 Raydium price simulation
+  // Raydium price simulation
   async getRaydiumQuote(tokenIn: string, tokenOut: string, amount: number) {
     await this.sleep(300); // Simulate network latency (no-op in tests)
 
@@ -18,7 +18,7 @@ export class MockDexRouter {
     };
   }
 
-  // 🔹 Meteora price simulation
+  // Meteora price simulation
   async getMeteoraQuote(tokenIn: string, tokenOut: string, amount: number) {
     await this.sleep(300);
 
@@ -35,7 +35,7 @@ export class MockDexRouter {
     };
   }
 
-  // 🔹 Compare and return best DEX quote
+  // Compare and return best DEX quote
   async getBestPrice(tokenIn: string, tokenOut: string, amount: number) {
     const [raydium, meteora] = await Promise.all([
       this.getRaydiumQuote(tokenIn, tokenOut, amount),
